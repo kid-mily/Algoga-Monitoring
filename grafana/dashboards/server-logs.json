@@ -13,7 +13,7 @@
         "name": "job",
         "label": "Job",
         "type": "query",
-        "datasource": { "type": "loki", "uid": "loki" },
+        "datasource": { "type": "loki", "uid": "loki_ds" },
         "query": "label_values(job)",
         "refresh": 2,
         "includeAll": true,
@@ -43,7 +43,7 @@
       "id": 1,
       "type": "stat",
       "title": "총 로그 라인 (선택 기간)",
-      "datasource": { "type": "loki", "uid": "loki" },
+      "datasource": { "type": "loki", "uid": "loki_ds" },
       "gridPos": { "h": 8, "w": 6, "x": 0, "y": 0 },
       "options": {
         "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
@@ -52,7 +52,7 @@
       "fieldConfig": { "defaults": { "color": { "mode": "thresholds" },
         "thresholds": { "steps": [ { "color": "green", "value": null } ] }, "unit": "short" }, "overrides": [] },
       "targets": [
-        { "refId": "A", "datasource": { "type": "loki", "uid": "loki" },
+        { "refId": "A", "datasource": { "type": "loki", "uid": "loki_ds" },
           "expr": "sum(count_over_time({job=~\"$job\"} |= \"$search\" [$__range]))",
           "queryType": "instant" }
       ]
@@ -61,7 +61,7 @@
       "id": 2,
       "type": "stat",
       "title": "에러/예외 로그 (선택 기간)",
-      "datasource": { "type": "loki", "uid": "loki" },
+      "datasource": { "type": "loki", "uid": "loki_ds" },
       "gridPos": { "h": 8, "w": 6, "x": 6, "y": 0 },
       "options": {
         "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
@@ -70,7 +70,7 @@
       "fieldConfig": { "defaults": { "color": { "mode": "thresholds" },
         "thresholds": { "steps": [ { "color": "green", "value": null }, { "color": "red", "value": 1 } ] }, "unit": "short" }, "overrides": [] },
       "targets": [
-        { "refId": "A", "datasource": { "type": "loki", "uid": "loki" },
+        { "refId": "A", "datasource": { "type": "loki", "uid": "loki_ds" },
           "expr": "sum(count_over_time({job=~\"$job\"} |= \"$search\" |~ \"(?i)(error|exception|fail)\" [$__range]))",
           "queryType": "instant" }
       ]
@@ -79,7 +79,7 @@
       "id": 3,
       "type": "timeseries",
       "title": "로그 발생량 (분당)",
-      "datasource": { "type": "loki", "uid": "loki" },
+      "datasource": { "type": "loki", "uid": "loki_ds" },
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
       "fieldConfig": { "defaults": {
         "color": { "mode": "palette-classic" },
@@ -87,10 +87,10 @@
         "unit": "short" }, "overrides": [] },
       "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
       "targets": [
-        { "refId": "A", "datasource": { "type": "loki", "uid": "loki" },
+        { "refId": "A", "datasource": { "type": "loki", "uid": "loki_ds" },
           "expr": "sum(count_over_time({job=~\"$job\"} |= \"$search\" [1m]))",
           "legendFormat": "logs/min" },
-        { "refId": "B", "datasource": { "type": "loki", "uid": "loki" },
+        { "refId": "B", "datasource": { "type": "loki", "uid": "loki_ds" },
           "expr": "sum(count_over_time({job=~\"$job\"} |= \"$search\" |~ \"(?i)(error|exception|fail)\" [1m]))",
           "legendFormat": "errors/min" }
       ]
@@ -99,7 +99,7 @@
       "id": 4,
       "type": "logs",
       "title": "로그 스트림",
-      "datasource": { "type": "loki", "uid": "loki" },
+      "datasource": { "type": "loki", "uid": "loki_ds" },
       "gridPos": { "h": 18, "w": 24, "x": 0, "y": 8 },
       "options": {
         "showTime": true, "showLabels": false, "showCommonLabels": false,
@@ -107,7 +107,7 @@
         "enableLogDetails": true, "dedupStrategy": "none", "sortOrder": "Descending"
       },
       "targets": [
-        { "refId": "A", "datasource": { "type": "loki", "uid": "loki" },
+        { "refId": "A", "datasource": { "type": "loki", "uid": "loki_ds" },
           "expr": "{job=~\"$job\"} |= \"$search\"" }
       ]
     }

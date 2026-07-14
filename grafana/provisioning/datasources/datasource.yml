@@ -1,8 +1,10 @@
 apiVersion: 1
 
 datasources:
-  # Prometheus 는 route-prefix(/prometheus/)로 서빙되므로 URL에도 /prometheus 포함
+  # 대시보드 JSON들이 참조하는 UID(prometheus_ds / loki_ds)에 맞춰 고정한다.
+  # 이게 안 맞으면 "datasource was not found" 로 대시보드에 데이터가 안 나온다.
   - name: Prometheus
+    uid: prometheus_ds
     type: prometheus
     access: proxy
     url: http://prometheus:9090/prometheus
@@ -10,6 +12,7 @@ datasources:
     editable: true
 
   - name: Loki
+    uid: loki_ds
     type: loki
     access: proxy
     url: http://loki:3100
