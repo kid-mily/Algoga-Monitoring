@@ -1,0 +1,66 @@
+{
+  "title": "Algoga Banner Domain Overview",
+  "uid": "algoga-banner-overview",
+  "schemaVersion": 38,
+  "version": 1,
+  "refresh": "10s",
+  "time": { "from": "now-1h", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "title": "배너 API 초당 호출 수 (TPS)",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 0, "w": 8, "h": 8 },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus_ds" },
+          "expr": "sum(rate(algoga_banner_execution_time_seconds_count[1m])) by (method)",
+          "legendFormat": "{{method}}"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "reqps" } }
+    },
+    {
+      "id": 2,
+      "title": "배너 평균 응답 속도",
+      "type": "timeseries",
+      "gridPos": { "x": 8, "y": 0, "w": 8, "h": 8 },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus_ds" },
+          "expr": "sum(rate(algoga_banner_execution_time_seconds_sum[1m])) by (method) / sum(rate(algoga_banner_execution_time_seconds_count[1m]) > 0) by (method)",
+          "legendFormat": "{{method}}"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "s" } }
+    },
+    {
+      "id": 3,
+      "title": "배너 API 에러 발생 수",
+      "type": "timeseries",
+      "gridPos": { "x": 16, "y": 0, "w": 8, "h": 8 },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus_ds" },
+          "expr": "sum(increase(algoga_banner_errors_total[1m])) by (method)",
+          "legendFormat": "{{method}} Error"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "short" } }
+    },
+    {
+      "id": 4,
+      "title": "배너 도메인 실시간 로그 (Loki)",
+      "type": "logs",
+      "gridPos": { "x": 0, "y": 8, "w": 24, "h": 12 },
+      "targets": [
+        {
+          "datasource": { "type": "loki", "uid": "loki_ds" },
+          "expr": "{job=\"algoga-server\"} |= \"[Banner Domain]\"",
+          "legendFormat": ""
+        }
+      ],
+      "options": { "showTime": true, "showLabels": false, "sortOrder": "Descending" }
+    }
+  ]
+}

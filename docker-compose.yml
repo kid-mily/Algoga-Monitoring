@@ -1,0 +1,100 @@
+# algoga-monitoring : 개발팀용 내부 운영 포털 + 관측 스택
+# 외부에 노출되는 건 gateway(포털) 하나뿐. grafana/prometheus/loki 는 내부 전용.
+services:
+
+  # 0) 설정 렌더러: .env 값을 템플릿(prometheus/nginx)에 주입해 공유 볼륨에 생성
+  config-renderer:
+    image: alpine:3.20
+    environment:
+      PROM_TARGET: ${PROM_TARGET}
+      PROM_PORT: ${PROM_PORT}
+      PROM_PATH: ${PROM_PATH}
+      SCRAPE_INTERVAL: ${SCRAPE_INTERVAL}
+      GRAFANA_UPSTREAM: ${GRAFANA_UPSTREAM}
+      PROMETHEUS_UPSTREAM: ${PROMETHEUS_UPSTREAM}
+    volumes:
+      - ./prometheus/prometheus.yml.tpl:/tpl/prometheus.yml.tpl:ro
+      - ./gateway/nginx.conf.tpl:/tpl/nginx.conf.tpl:ro
+      - rendered:/rendered
+    command:
+      - sh
+      - -c
+      - |
+        apk add --no-cache gettext >/dev/null
+        # prometheus.yml : 나열한 변수만 치환
+        envsubst '$$PROM_TARGET $$PROM_PORT $$PROM_PATH $$SCRAPE_INTERVAL' \
+          < /tpl/prometheus.yml.tpl > /rendered/prometheus.yml
+        # nginx.conf : 업스트림만 치환 (nginx 내장 $host 등은 그대로 보존)
+        envsubst '$$GRAFANA_UPSTREAM $$PROMETHEUS_UPSTREAM' \
+          < /tpl/nginx.conf.tpl > /rendered/nginx.conf
+        echo "[config-renderer] rendered prometheus.yml & nginx.conf"
+
+  # 1) 게이트웨이(포털) : 유일한 외부 노출 지점
+  gateway:
+    image: nginx:1.27-alpine
+    depends_on:
+      config-renderer:
+        condition: service_completed_successfully
+      grafana:
+        condition: service_started
+      prometheus:
+        condition: service_started
+    ports:
+      - "${GATEWAY_PORT}:80"
+    volumes:
+      - rendered:/rendered:ro
+      - ./gateway/portal:/usr/share/nginx/html:ro
+    command:
+      - sh
+      - -c
+      - "cp /rendered/nginx.conf /etc/nginx/conf.d/default.conf && exec nginx -g 'daemon off;'"
+    restart: unless-stopped
+
+  # 2) Grafana : /grafana/ 서브패스로 서빙
+  grafana:
+    image: grafana/grafana:latest
+    environment:
+      - GF_SERVER_ROOT_URL=%(protocol)s://%(domain)s/grafana/
+      - GF_SERVER_SERVE_FROM_SUB_PATH=true
+      - GF_SECURITY_ADMIN_PASSWORD=${GF_ADMIN_PW}
+      - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
+      - SLACK_WEBHOOK_URL=${SLACK_WEBHOOK_URL:-https://hooks.slack.com/services/PLACEHOLDER/PLACEHOLDER/PLACEHOLDER}
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - ./grafana/dashboards:/var/lib/grafana/dashboards
+      - grafana-storage:/var/lib/grafana
+    depends_on:
+      - prometheus
+      - loki
+    restart: unless-stopped
+
+  # 3) Prometheus : /prometheus/ 서브패스(route-prefix)로 서빙, 설정은 렌더된 파일 사용
+  prometheus:
+    image: prom/prometheus:latest
+    depends_on:
+      config-renderer:
+        condition: service_completed_successfully
+    command:
+      - '--config.file=/rendered/prometheus.yml'
+      - '--web.enable-remote-write-receiver'
+      - '--web.external-url=/prometheus/'
+      - '--web.route-prefix=/prometheus/'
+    volumes:
+      - rendered:/rendered:ro
+      - prometheus-data:/prometheus
+    restart: unless-stopped
+
+  # 4) Loki : UI 없음(Grafana에서 조회). 앱이 여기로 로그 push
+  loki:
+    image: grafana/loki:latest
+    command: -config.file=/etc/loki/local-config.yaml
+    volumes:
+      - ./loki/loki-config.yml:/etc/loki/local-config.yaml:ro
+      - loki-data:/loki
+    restart: unless-stopped
+
+volumes:
+  rendered:
+  grafana-storage:
+  prometheus-data:
+  loki-data:

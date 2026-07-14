@@ -1,0 +1,107 @@
+{
+  "title": "Algoga Friend Domain Dashboard",
+  "uid": "algoga-friend-dashboard",
+  "schemaVersion": 38,
+  "version": 1,
+  "refresh": "10s",
+  "time": { "from": "now-1h", "to": "now" },
+  "timezone": "Asia/Seoul",
+  "panels": [
+    {
+      "id": 100,
+      "type": "row",
+      "title": "🤝 Friend Performance & Caching Metrics (친구 조회 성능 및 캐시 최적화 검증)",
+      "gridPos": { "x": 0, "y": 0, "w": 24, "h": 1 },
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "id": 1,
+      "title": "친구 조회 API 처리 결과 (🔥성공 vs 에러)",
+      "type": "timeseries",
+      "description": "최적화 전 부하가 심해지면 500 에러(빨간선)가 치솟습니다. 캐시 적용 후에는 500 에러 없이 200 OK(초록선)만 유지되어야 합니다.",
+      "gridPos": { "x": 0, "y": 1, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus_ds" },
+          "expr": "sum(rate(http_server_requests_seconds_count{uri=\"/api/v1/friends\", status=\"200\"}[1m]))",
+          "legendFormat": "성공 (200 OK)"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus_ds" },
+          "expr": "sum(rate(http_server_requests_seconds_count{uri=\"/api/v1/friends\", status=\"500\"}[1m]))",
+          "legendFormat": "DB 타임아웃 에러 (500 ERROR)"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "reqps" } }
+    },
+    {
+      "id": 2,
+      "title": "친구 목록 조회 응답시간 (p50 / p95 / p99)",
+      "type": "timeseries",
+      "description": "캐시 적용 전(DB Join)과 적용 후(Redis Hit)의 지연 시간(p95) 하락을 증명합니다.",
+      "gridPos": { "x": 12, "y": 1, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus_ds" },
+          "expr": "histogram_quantile(0.99, rate(http_server_requests_seconds_bucket{uri=\"/api/v1/friends\"}[$__rate_interval]))",
+          "legendFormat": "p99"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus_ds" },
+          "expr": "histogram_quantile(0.95, rate(http_server_requests_seconds_bucket{uri=\"/api/v1/friends\"}[$__rate_interval]))",
+          "legendFormat": "p95"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus_ds" },
+          "expr": "histogram_quantile(0.50, rate(http_server_requests_seconds_bucket{uri=\"/api/v1/friends\"}[$__rate_interval]))",
+          "legendFormat": "p50"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "s" } }
+    },
+    {
+      "id": 3,
+      "title": "DB 커넥션 풀 대기 상태 (HikariCP Pending)",
+      "type": "timeseries",
+      "description": "캐시가 없을 때 대량의 조인(Join) 조회가 발생해 DB 커넥션 풀이 고갈되고 대기 현상(Pending)이 발생하는지 점검합니다.",
+      "gridPos": { "x": 0, "y": 9, "w": 24, "h": 7 },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus_ds" },
+          "expr": "hikaricp_connections_active",
+          "legendFormat": "사용 중인 커넥션 (Active)"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus_ds" },
+          "expr": "hikaricp_connections_pending",
+          "legendFormat": "풀 고갈로 대기 중인 요청 (Pending)"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "short" } }
+    },
+    {
+      "id": 200,
+      "type": "row",
+      "title": "📋 Friend Domain Logs",
+      "gridPos": { "x": 0, "y": 16, "w": 24, "h": 1 },
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "id": 4,
+      "title": "Friend 관련 실시간 로그 필터링",
+      "type": "logs",
+      "description": "친구 추가, 수락, 삭제 등 Friend 도메인에서 발생하는 로그를 추적합니다.",
+      "gridPos": { "x": 0, "y": 17, "w": 24, "h": 10 },
+      "targets": [
+        {
+          "datasource": { "type": "loki", "uid": "loki_ds" },
+          "expr": "{job=\"algoga-server\"} |= \"Friend\"",
+          "legendFormat": ""
+        }
+      ],
+      "options": { "showTime": true, "showLabels": false, "sortOrder": "Descending" }
+    }
+  ]
+}

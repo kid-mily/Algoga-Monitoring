@@ -1,0 +1,263 @@
+{
+  "title": "Algoga Community Post Detail",
+  "uid": "algoga-community-post-detail",
+  "schemaVersion": 38,
+  "version": 1,
+  "refresh": "10s",
+  "time": { "from": "now-1h", "to": "now" },
+  "panels": [
+    {
+      "id": 100,
+      "type": "row",
+      "title": "게시글 단건 조회 API 응답 성능",
+      "gridPos": { "x": 0, "y": 0, "w": 24, "h": 1 },
+      "collapsed": false
+    },
+    {
+      "id": 1,
+      "title": "게시글 단건 조회 TPS",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 1, "w": 8, "h": 8 },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus_ds" },
+          "expr": "sum(rate(http_server_requests_seconds_count{uri=\"/api/v1/posts/{postId}\", status=\"200\"}[1m]))",
+          "legendFormat": "성공 TPS"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus_ds" },
+          "expr": "sum(rate(http_server_requests_seconds_count{uri=\"/api/v1/posts/{postId}\", status=~\"4..|5..\"}[1m]))",
+          "legendFormat": "에러 TPS"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "reqps" } }
+    },
+    {
+      "id": 2,
+      "title": "게시글 단건 조회 응답시간 (p50 / p95 / p99)",
+      "type": "timeseries",
+      "description": "N+1 최적화 전/후 p95 변화를 여기서 비교합니다.",
+      "gridPos": { "x": 8, "y": 1, "w": 8, "h": 8 },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus_ds" },
+          "expr": "histogram_quantile(0.99, rate(http_server_requests_seconds_bucket{uri=\"/api/v1/posts/{postId}\"}[$__rate_interval]))",
+          "legendFormat": "p99"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus_ds" },
+          "expr": "histogram_quantile(0.95, rate(http_server_requests_seconds_bucket{uri=\"/api/v1/posts/{postId}\"}[$__rate_interval]))",
+          "legendFormat": "p95"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus_ds" },
+          "expr": "histogram_quantile(0.50, rate(http_server_requests_seconds_bucket{uri=\"/api/v1/posts/{postId}\"}[$__rate_interval]))",
+          "legendFormat": "p50"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "s" } }
+    },
+    {
+      "id": 3,
+      "title": "에러율 (%)",
+      "type": "timeseries",
+      "gridPos": { "x": 16, "y": 1, "w": 8, "h": 8 },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus_ds" },
+          "expr": "sum(rate(http_server_requests_seconds_count{uri=\"/api/v1/posts/{postId}\", status=~\"5..\"}[1m])) / clamp_min(sum(rate(http_server_requests_seconds_count{uri=\"/api/v1/posts/{postId}\"}[1m])), 0.001) * 100",
+          "legendFormat": "5xx 에러율"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 1 },
+              { "color": "red", "value": 5 }
+            ]
+          }
+        }
+      }
+    },
+
+    {
+      "id": 101,
+      "type": "row",
+      "title": "DB 커넥션 풀 (N+1 영향도 관찰)",
+      "gridPos": { "x": 0, "y": 9, "w": 24, "h": 1 },
+      "collapsed": false
+    },
+    {
+      "id": 4,
+      "title": "DB 커넥션 풀 상태",
+      "description": "부하 중 Active 커넥션이 급증하면 N+1 쿼리가 DB를 압박하는 신호입니다.",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 10, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus_ds" },
+          "expr": "hikaricp_connections_active",
+          "legendFormat": "Active"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus_ds" },
+          "expr": "hikaricp_connections_idle",
+          "legendFormat": "Idle"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus_ds" },
+          "expr": "hikaricp_connections_pending",
+          "legendFormat": "Pending (대기)"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "DB 커넥션 획득 대기시간 (p95)",
+      "description": "Pending이 발생하면 이 값이 올라갑니다. N+1로 커넥션이 고갈되는 상황을 감지합니다.",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 10, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus_ds" },
+          "expr": "histogram_quantile(0.95, rate(hikaricp_connections_acquire_seconds_bucket[$__rate_interval]))",
+          "legendFormat": "획득 대기 p95"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "s" } }
+    },
+
+    {
+      "id": 102,
+      "type": "row",
+      "title": "인프라",
+      "gridPos": { "x": 0, "y": 18, "w": 24, "h": 1 },
+      "collapsed": false
+    },
+    {
+      "id": 6,
+      "title": "JVM Heap 사용량",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 19, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus_ds" },
+          "expr": "jvm_memory_used_bytes{area=\"heap\"}",
+          "legendFormat": "{{id}}"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "bytes" } }
+    },
+    {
+      "id": 7,
+      "title": "JVM GC Pause 시간",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 19, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus_ds" },
+          "expr": "rate(jvm_gc_pause_seconds_sum[1m])",
+          "legendFormat": "{{gc}} - {{action}}"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "s" } }
+    },
+
+    {
+      "id": 103,
+      "type": "row",
+      "title": "로그",
+      "gridPos": { "x": 0, "y": 27, "w": 24, "h": 1 },
+      "collapsed": false
+    },
+    {
+      "id": 8,
+      "title": "커뮤니티 도메인 실시간 로그 (Loki)",
+      "type": "logs",
+      "gridPos": { "x": 0, "y": 28, "w": 24, "h": 10 },
+      "targets": [
+        {
+          "datasource": { "type": "loki", "uid": "loki_ds" },
+          "expr": "{job=\"algoga-server\"} |= \"/api/v1/posts/\"",
+          "legendFormat": ""
+        }
+      ],
+      "options": { "showTime": true, "showLabels": false, "sortOrder": "Descending" }
+    }
+  ,
+    {
+      "id": 104,
+      "type": "row",
+      "title": "서비스 상태 (Health)",
+      "gridPos": { "x": 0, "y": 38, "w": 24, "h": 1 },
+      "collapsed": false
+    },
+    {
+      "id": 9,
+      "title": "DB 커넥션 풀 상태 (Health)",
+      "description": "커넥션 타임아웃이 발생하거나 Pending이 지속되면 DB 연결 이상 신호입니다.",
+      "type": "stat",
+      "gridPos": { "x": 0, "y": 39, "w": 6, "h": 4 },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus_ds" },
+          "expr": "hikaricp_connections_timeout_total{application=\"algoga-server\"}",
+          "legendFormat": "커넥션 타임아웃"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 1 }
+            ]
+          }
+        }
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] } }
+    },
+    {
+      "id": 10,
+      "title": "DB 전체 커넥션",
+      "type": "stat",
+      "gridPos": { "x": 6, "y": 39, "w": 6, "h": 4 },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus_ds" },
+          "expr": "hikaricp_connections{application=\"algoga-server\"}",
+          "legendFormat": "전체"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "short" } },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] } }
+    },
+    {
+      "id": 11,
+      "title": "DB Active / Idle / Pending",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 39, "w": 12, "h": 4 },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus_ds" },
+          "expr": "hikaricp_connections_active{application=\"algoga-server\"}",
+          "legendFormat": "Active"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus_ds" },
+          "expr": "hikaricp_connections_idle{application=\"algoga-server\"}",
+          "legendFormat": "Idle"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus_ds" },
+          "expr": "hikaricp_connections_pending{application=\"algoga-server\"}",
+          "legendFormat": "Pending"
+        }
+      ]
+    }]
+}

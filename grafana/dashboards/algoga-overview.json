@@ -1,0 +1,320 @@
+{
+  "title": "Algoga Server Overview",
+  "uid": "algoga-overview",
+  "schemaVersion": 38,
+  "version": 2,
+  "refresh": "10s",
+  "time": { "from": "now-1h", "to": "now" },
+  "panels": [
+    {
+      "id": 100,
+      "type": "row",
+      "title": "서킷브레이커 & 외부 API (PortOne / Flight)",
+      "gridPos": { "x": 0, "y": 0, "w": 24, "h": 1 },
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "id": 1,
+      "title": "서킷브레이커 상태 - PortOne",
+      "type": "stat",
+      "gridPos": { "x": 0, "y": 1, "w": 6, "h": 4 },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus_ds" },
+          "expr": "resilience4j_circuitbreaker_state{name=\"portone\", state=\"closed\"}",
+          "legendFormat": "CLOSED"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus_ds" },
+          "expr": "resilience4j_circuitbreaker_state{name=\"portone\", state=\"open\"}",
+          "legendFormat": "OPEN"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus_ds" },
+          "expr": "resilience4j_circuitbreaker_state{name=\"portone\", state=\"half_open\"}",
+          "legendFormat": "HALF_OPEN"
+        }
+      ],
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "colorMode": "background",
+        "graphMode": "none"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            { "type": "value", "options": { "1": { "text": "ACTIVE", "color": "green" } } },
+            { "type": "value", "options": { "0": { "text": "INACTIVE", "color": "grey" } } }
+          ]
+        }
+      }
+    },
+    {
+      "id": 2,
+      "title": "서킷브레이커 상태 - Flight",
+      "type": "stat",
+      "gridPos": { "x": 6, "y": 1, "w": 6, "h": 4 },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus_ds" },
+          "expr": "resilience4j_circuitbreaker_state{name=\"flight\", state=\"closed\"}",
+          "legendFormat": "CLOSED"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus_ds" },
+          "expr": "resilience4j_circuitbreaker_state{name=\"flight\", state=\"open\"}",
+          "legendFormat": "OPEN"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus_ds" },
+          "expr": "resilience4j_circuitbreaker_state{name=\"flight\", state=\"half_open\"}",
+          "legendFormat": "HALF_OPEN"
+        }
+      ],
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "colorMode": "background",
+        "graphMode": "none"
+      }
+    },
+    {
+      "id": 3,
+      "title": "서킷브레이커 실패율 (%)",
+      "type": "gauge",
+      "gridPos": { "x": 12, "y": 1, "w": 6, "h": 4 },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus_ds" },
+          "expr": "resilience4j_circuitbreaker_failure_rate{name=\"portone\"}",
+          "legendFormat": "PortOne"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus_ds" },
+          "expr": "resilience4j_circuitbreaker_failure_rate{name=\"flight\"}",
+          "legendFormat": "Flight"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "min": 0, "max": 100, "unit": "percent",
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 30 },
+              { "color": "red", "value": 50 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 4,
+      "title": "서킷브레이커 차단 호출",
+      "type": "stat",
+      "gridPos": { "x": 18, "y": 1, "w": 6, "h": 4 },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus_ds" },
+          "expr": "resilience4j_circuitbreaker_not_permitted_calls_total{name=\"portone\"}",
+          "legendFormat": "PortOne 차단"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus_ds" },
+          "expr": "resilience4j_circuitbreaker_not_permitted_calls_total{name=\"flight\"}",
+          "legendFormat": "Flight 차단"
+        }
+      ],
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "colorMode": "background",
+        "graphMode": "none"
+      }
+    },
+    {
+      "id": 5,
+      "title": "PortOne API 응답시간 (p50/95/99)",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 5, "w": 12, "h": 8 },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "prometheus_ds" }, "expr": "algoga_portone_api_duration_seconds{quantile=\"0.99\"}", "legendFormat": "p99" },
+        { "datasource": { "type": "prometheus", "uid": "prometheus_ds" }, "expr": "algoga_portone_api_duration_seconds{quantile=\"0.95\"}", "legendFormat": "p95" },
+        { "datasource": { "type": "prometheus", "uid": "prometheus_ds" }, "expr": "algoga_portone_api_duration_seconds{quantile=\"0.5\"}", "legendFormat": "p50" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "s" } }
+    },
+    {
+      "id": 6,
+      "title": "결제 처리 소요시간 (p50/95/99)",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 5, "w": 12, "h": 8 },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "prometheus_ds" }, "expr": "algoga_payment_duration_seconds{quantile=\"0.99\"}", "legendFormat": "p99" },
+        { "datasource": { "type": "prometheus", "uid": "prometheus_ds" }, "expr": "algoga_payment_duration_seconds{quantile=\"0.95\"}", "legendFormat": "p95" },
+        { "datasource": { "type": "prometheus", "uid": "prometheus_ds" }, "expr": "algoga_payment_duration_seconds{quantile=\"0.5\"}", "legendFormat": "p50" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "s" } }
+    },
+
+    {
+      "id": 101,
+      "type": "row",
+      "title": "결제 / 예약 / 환불 비즈니스 메트릭",
+      "gridPos": { "x": 0, "y": 13, "w": 24, "h": 1 },
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "id": 7,
+      "title": "결제 성공/실패율",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 14, "w": 8, "h": 8 },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "prometheus_ds" }, "expr": "rate(algoga_payment_total{result=\"success\"}[1m])", "legendFormat": "성공" },
+        { "datasource": { "type": "prometheus", "uid": "prometheus_ds" }, "expr": "rate(algoga_payment_total{result=\"failed\"}[1m])", "legendFormat": "실패" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "reqps" } }
+    },
+    {
+      "id": 8,
+      "title": "예약/환불 현황",
+      "type": "timeseries",
+      "gridPos": { "x": 8, "y": 14, "w": 8, "h": 8 },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "prometheus_ds" }, "expr": "rate(algoga_booking_total[1m])", "legendFormat": "예약 생성" },
+        { "datasource": { "type": "prometheus", "uid": "prometheus_ds" }, "expr": "rate(algoga_booking_canceled_total[1m])", "legendFormat": "예약 취소" },
+        { "datasource": { "type": "prometheus", "uid": "prometheus_ds" }, "expr": "rate(algoga_refund_requested_total[1m])", "legendFormat": "환불 요청" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "reqps" } }
+    },
+    {
+      "id": 9,
+      "title": "어드민 API 403 거부 추이 (권한 없는 접근 시도)",
+      "type": "timeseries",
+      "description": "PreAuthorize에 의해 차단된 어드민 API 호출 추이. 평소보다 급증하면 토큰 탈취/오용 의심.",
+      "gridPos": { "x": 16, "y": 14, "w": 8, "h": 8 },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus_ds" },
+          "expr": "rate(http_server_requests_seconds_count{status=\"403\"}[5m])",
+          "legendFormat": "{{uri}}"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "reqps" } }
+    },
+
+    {
+      "id": 102,
+      "type": "row",
+      "title": "API 에러 분류",
+      "gridPos": { "x": 0, "y": 22, "w": 24, "h": 1 },
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "id": 10,
+      "title": "API 에러 발생률 (reason별)",
+      "type": "timeseries",
+      "description": "access_denied / business / validation / bad_request / method_not_allowed / not_found / server_error",
+      "gridPos": { "x": 0, "y": 23, "w": 24, "h": 8 },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "prometheus_ds" }, "expr": "rate(algoga_api_errors_total[1m])", "legendFormat": "{{reason}}" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "reqps" } }
+    },
+
+    {
+      "id": 103,
+      "type": "row",
+      "title": "인프라 (캐시 / JVM / DB)",
+      "gridPos": { "x": 0, "y": 31, "w": 24, "h": 1 },
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "id": 11,
+      "title": "월별 통계 쿼리 응답시간",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 32, "w": 12, "h": 8 },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "prometheus_ds" }, "expr": "http_server_requests_seconds{uri=~\".*/payments/stats.*\", quantile=\"0.99\"}", "legendFormat": "p99" },
+        { "datasource": { "type": "prometheus", "uid": "prometheus_ds" }, "expr": "http_server_requests_seconds{uri=~\".*/payments/stats.*\", quantile=\"0.5\"}", "legendFormat": "p50" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "s" } }
+    },
+    {
+      "id": 12,
+      "title": "캐시 히트율",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 32, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus_ds" },
+          "expr": "rate(cache_gets_total{result=\"hit\"}[1m]) / (rate(cache_gets_total{result=\"hit\"}[1m]) + rate(cache_gets_total{result=\"miss\"}[1m]))",
+          "legendFormat": "{{cache}} 히트율"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "percentunit", "min": 0, "max": 1 } }
+    },
+    {
+      "id": 13,
+      "title": "JVM Heap 사용량",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 40, "w": 8, "h": 8 },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "prometheus_ds" }, "expr": "jvm_memory_used_bytes{area=\"heap\"}", "legendFormat": "{{id}}" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "bytes" } }
+    },
+    {
+      "id": 14,
+      "title": "DB 커넥션 풀 상태",
+      "type": "timeseries",
+      "gridPos": { "x": 8, "y": 40, "w": 8, "h": 8 },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "prometheus_ds" }, "expr": "hikaricp_connections_active", "legendFormat": "Active" },
+        { "datasource": { "type": "prometheus", "uid": "prometheus_ds" }, "expr": "hikaricp_connections_idle", "legendFormat": "Idle" },
+        { "datasource": { "type": "prometheus", "uid": "prometheus_ds" }, "expr": "hikaricp_connections_pending", "legendFormat": "Pending" }
+      ]
+    },
+    {
+      "id": 15,
+      "title": "JVM GC Pause 시간",
+      "type": "timeseries",
+      "gridPos": { "x": 16, "y": 40, "w": 8, "h": 8 },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "prometheus_ds" }, "expr": "rate(jvm_gc_pause_seconds_sum[1m])", "legendFormat": "{{gc}} - {{action}}" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "s" } }
+    },
+
+    {
+      "id": 104,
+      "type": "row",
+      "title": "로그",
+      "gridPos": { "x": 0, "y": 48, "w": 24, "h": 1 },
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "id": 16,
+      "title": "실시간 애플리케이션 로그",
+      "type": "logs",
+      "gridPos": { "x": 0, "y": 49, "w": 24, "h": 10 },
+      "targets": [
+        { "datasource": { "type": "loki", "uid": "loki_ds" }, "expr": "{job=\"algoga-server\"}", "legendFormat": "" }
+      ],
+      "options": { "showTime": true, "showLabels": false, "sortOrder": "Descending" }
+    },
+    {
+      "id": 17,
+      "title": "에러 로그 필터",
+      "type": "logs",
+      "gridPos": { "x": 0, "y": 59, "w": 24, "h": 10 },
+      "targets": [
+        { "datasource": { "type": "loki", "uid": "loki_ds" }, "expr": "{job=\"algoga-server\"} |= \"ERROR\"", "legendFormat": "" }
+      ],
+      "options": { "showTime": true, "showLabels": false, "sortOrder": "Descending" }
+    }
+  ]
+}

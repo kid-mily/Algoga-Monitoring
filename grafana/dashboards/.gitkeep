@@ -1,0 +1,2 @@
+# 여기에 대시보드 JSON을 복사하세요:
+#   cp <앱레포>/monitoring/grafana/dashboards/*.json .

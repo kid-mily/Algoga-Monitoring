@@ -1,0 +1,167 @@
+{
+  "title": "Algoga Chatbot Operations & Traffic Analysis",
+  "uid": "algoga-chatbot-ops",
+  "schemaVersion": 38,
+  "version": 2,
+  "refresh": "10s",
+  "time": { "from": "now-24h", "to": "now" },
+  "panels": [
+    {
+      "id": 10,
+      "type": "row",
+      "title": "🔥 시간대별 요청 몰림 및 트래픽 집중도 분석",
+      "gridPos": { "x": 0, "y": 0, "w": 24, "h": 1 },
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "id": 11,
+      "title": "시간대별 트래픽 혼잡도 (Heatmap)",
+      "type": "heatmap",
+      "description": "어느 시간대에 요청이 집중적으로 몰리는지 밀도를 색상으로 보여줍니다. 색이 짙거나 밝게 활성화되는 지점이 요청이 급증하는 피크 시간대(Peak Time)입니다.",
+      "gridPos": { "x": 0, "y": 1, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus_ds" },
+          "expr": "sum(rate(algoga_chatbot_requests_total[5m]))",
+          "format": "time_series"
+        }
+      ],
+      "heatmap": {},
+      "options": {
+        "calculate_t": false,
+        "color": {
+          "cardColor": "#00a2ff",
+          "colorScale": "sqrt",
+          "colorScheme": "interpolateOranges",
+          "exponent": 0.5,
+          "mode": "spectrum"
+        },
+        "exemplars": { "color": "rgba(255,255,255,0.25)" },
+        "filterValues": { "le": 1e-9 },
+        "tooltip": { "show": true, "yHistogram": false },
+        "rowsFrame": { "layout": "columnbycolumn" }
+      }
+    },
+    {
+      "id": 12,
+      "title": "24시간 트래픽 사이클 및 피크 타임 추이",
+      "type": "timeseries",
+      "description": "하루 중 어느 시간대(아침, 점심, 심야 등)에 유저 요청이 밀려드는지 시계열 선형 그래프로 확인합니다.",
+      "gridPos": { "x": 12, "y": 1, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus_ds" },
+          "expr": "sum(rate(algoga_chatbot_requests_total[5m]))",
+          "legendFormat": "초당 총 요청 수 (TPS)"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 20
+          }
+        }
+      }
+    },
+    {
+      "id": 20,
+      "type": "row",
+      "title": "📊 챗봇 핵심 안정성 및 운영 비즈니스 메트릭",
+      "gridPos": { "x": 0, "y": 9, "w": 24, "h": 1 },
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "id": 21,
+      "title": "요청 상태 백분율 (성공 / 차단 / 에러)",
+      "type": "timeseries",
+      "description": "유입된 전체 질문 중 정상 처리(Success), 무의미한 질문 필터링(Filtered), 시스템 예외(Error)의 비율을 계산하여 시스템의 실질적인 비용 효율과 상태를 진단합니다.",
+      "gridPos": { "x": 0, "y": 10, "w": 12, "h": 7 },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus_ds" },
+          "expr": "sum(rate(algoga_chatbot_requests_total{status=\"success\"}[5m])) / clamp_min(sum(rate(algoga_chatbot_requests_total[5m])), 0.001) * 100",
+          "legendFormat": "성공률 (%)"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus_ds" },
+          "expr": "sum(rate(algoga_chatbot_requests_total{status=\"filtered\"}[5m])) / clamp_min(sum(rate(algoga_chatbot_requests_total[5m])), 0.001) * 100",
+          "legendFormat": "필터 차단율 (%)"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus_ds" },
+          "expr": "sum(rate(algoga_chatbot_requests_total{status=\"error\"}[5m])) / clamp_min(sum(rate(algoga_chatbot_requests_total[5m])), 0.001) * 100",
+          "legendFormat": "에러 발생률 (%)"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "percent", "min": 0, "max": 100 } },
+      "options": { "stacking": { "mode": "normal", "group": "A" } }
+    },
+    {
+      "id": 22,
+      "title": "구간별 평균 응답 속도 (Latency Breakdown)",
+      "type": "timeseries",
+      "description": "챗봇 전체 응답 시간과 내부 성능(외부 LLM 응답 시간, 벡터 필터 검사 시간)을 쪼개어 분석하여 지연 원인을 추적합니다.",
+      "gridPos": { "x": 12, "y": 10, "w": 12, "h": 7 },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus_ds" },
+          "expr": "sum(rate(algoga_chatbot_execution_time_seconds_sum[1m])) / clamp_min(sum(rate(algoga_chatbot_execution_time_seconds_count[1m])), 0.001)",
+          "legendFormat": "전체 시스템 응답 속도 (평균)"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus_ds" },
+          "expr": "sum(rate(algoga_chatbot_llm_api_time_seconds_sum[1m])) / clamp_min(sum(rate(algoga_chatbot_llm_api_time_seconds_count[1m])), 0.001)",
+          "legendFormat": "순수 외부 LLM 지연 (평균)"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus_ds" },
+          "expr": "sum(rate(algoga_chatbot_filter_time_seconds_sum[1m])) / clamp_min(sum(rate(algoga_chatbot_filter_time_seconds_count[1m])), 0.001)",
+          "legendFormat": "벡터 필터 임베딩 검사 속도 (평균)"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "s" } }
+    },
+    {
+      "id": 23,
+      "title": "LLM 서킷브레이커 상태 (groqLlmApi)",
+      "type": "stat",
+      "description": "외부 LLM 장애 발생 시 API를 차단하고 Fallback 문구를 보내 스레드 고갈을 막는 서킷 상태입니다.",
+      "gridPos": { "x": 0, "y": 17, "w": 12, "h": 4 },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "prometheus_ds" }, "expr": "resilience4j_circuitbreaker_state{name=\"groqLlmApi\", state=\"closed\"}", "legendFormat": "CLOSED (정상 운행)" },
+        { "datasource": { "type": "prometheus", "uid": "prometheus_ds" }, "expr": "resilience4j_circuitbreaker_state{name=\"groqLlmApi\", state=\"open\"}", "legendFormat": "OPEN (장애 차단)" },
+        { "datasource": { "type": "prometheus", "uid": "prometheus_ds" }, "expr": "resilience4j_circuitbreaker_state{name=\"groqLlmApi\", state=\"half_open\"}", "legendFormat": "HALF_OPEN (시범 운행)" }
+      ],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background" }
+    },
+    {
+      "id": 24,
+      "title": "상태별 처리 트래픽 추이 (TPS)",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 17, "w": 12, "h": 4 },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "prometheus_ds" }, "expr": "rate(algoga_chatbot_requests_total[1m])", "legendFormat": "{{status}} 처리수" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "reqps" } }
+    },
+    {
+      "id": 30,
+      "title": "챗봇 도메인 실시간 어플리케이션 로그 (Loki)",
+      "type": "logs",
+      "gridPos": { "x": 0, "y": 21, "w": 24, "h": 10 },
+      "targets": [
+        {
+          "datasource": { "type": "loki", "uid": "loki_ds" },
+          "expr": "{job=\"algoga-server\"} |= \"Chatbot\"",
+          "legendFormat": ""
+        }
+      ],
+      "options": { "showTime": true, "showLabels": false, "sortOrder": "Descending" }
+    }
+  ]
+}
