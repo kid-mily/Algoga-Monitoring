@@ -11,8 +11,9 @@ server {
     }
 
     # Grafana (서브패스 + 웹소켓/Live 지원)
+    # 트레일링 슬래시 없음 → /grafana/ prefix 를 그대로 전달 (serve_from_sub_path=true 와 짝)
     location /grafana/ {
-        proxy_pass http://${GRAFANA_UPSTREAM}/;
+        proxy_pass http://${GRAFANA_UPSTREAM};
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;

@@ -24,7 +24,7 @@ services:
         # prometheus.yml : 나열한 변수만 치환
         envsubst '$$PROM_TARGET $$PROM_PORT $$PROM_PATH $$SCRAPE_INTERVAL' \
           < /tpl/prometheus.yml.tpl > /rendered/prometheus.yml
-        # nginx.conf : 업스트림만 치환 
+        # nginx.conf : 업스트림만 치환 (nginx 내장 변수는 그대로 보존)
         envsubst '$$GRAFANA_UPSTREAM $$PROMETHEUS_UPSTREAM' \
           < /tpl/nginx.conf.tpl > /rendered/nginx.conf
         echo "[config-renderer] rendered prometheus.yml & nginx.conf"
@@ -54,6 +54,8 @@ services:
   grafana:
     image: grafana/grafana:latest
     environment:
+      # 접속 도메인/IP (서브패스 리다이렉트가 localhost 로 가는 문제 방지). .env 의 GRAFANA_DOMAIN 사용.
+      - GF_SERVER_DOMAIN=${GRAFANA_DOMAIN:-localhost}
       - GF_SERVER_ROOT_URL=%(protocol)s://%(domain)s/grafana/
       - GF_SERVER_SERVE_FROM_SUB_PATH=true
       - GF_SECURITY_ADMIN_PASSWORD=${GF_ADMIN_PW}
