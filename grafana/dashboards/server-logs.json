@@ -1,0 +1,115 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "links": [],
+  "liveNow": true,
+  "schemaVersion": 39,
+  "tags": ["logs", "loki", "algoga"],
+  "templating": {
+    "list": [
+      {
+        "name": "job",
+        "label": "Job",
+        "type": "query",
+        "datasource": { "type": "loki", "uid": "loki" },
+        "query": "label_values(job)",
+        "refresh": 2,
+        "includeAll": true,
+        "multi": true,
+        "allValue": ".+",
+        "current": { "text": "All", "value": "$__all" },
+        "sort": 1
+      },
+      {
+        "name": "search",
+        "label": "검색어",
+        "type": "textbox",
+        "query": "",
+        "current": { "text": "", "value": "" }
+      }
+    ]
+  },
+  "time": { "from": "now-1h", "to": "now" },
+  "timepicker": {},
+  "timezone": "",
+  "title": "서버 로그 (Loki)",
+  "uid": "algoga-server-logs",
+  "version": 1,
+  "weekStart": "",
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "총 로그 라인 (선택 기간)",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "gridPos": { "h": 8, "w": 6, "x": 0, "y": 0 },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "colorMode": "value", "graphMode": "area", "justifyMode": "auto", "textMode": "auto"
+      },
+      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" },
+        "thresholds": { "steps": [ { "color": "green", "value": null } ] }, "unit": "short" }, "overrides": [] },
+      "targets": [
+        { "refId": "A", "datasource": { "type": "loki", "uid": "loki" },
+          "expr": "sum(count_over_time({job=~\"$job\"} |= \"$search\" [$__range]))",
+          "queryType": "instant" }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "에러/예외 로그 (선택 기간)",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "gridPos": { "h": 8, "w": 6, "x": 6, "y": 0 },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "colorMode": "value", "graphMode": "area", "justifyMode": "auto", "textMode": "auto"
+      },
+      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" },
+        "thresholds": { "steps": [ { "color": "green", "value": null }, { "color": "red", "value": 1 } ] }, "unit": "short" }, "overrides": [] },
+      "targets": [
+        { "refId": "A", "datasource": { "type": "loki", "uid": "loki" },
+          "expr": "sum(count_over_time({job=~\"$job\"} |= \"$search\" |~ \"(?i)(error|exception|fail)\" [$__range]))",
+          "queryType": "instant" }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "로그 발생량 (분당)",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "fieldConfig": { "defaults": {
+        "color": { "mode": "palette-classic" },
+        "custom": { "drawStyle": "bars", "fillOpacity": 40, "lineWidth": 1, "stacking": { "mode": "normal", "group": "A" } },
+        "unit": "short" }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        { "refId": "A", "datasource": { "type": "loki", "uid": "loki" },
+          "expr": "sum(count_over_time({job=~\"$job\"} |= \"$search\" [1m]))",
+          "legendFormat": "logs/min" },
+        { "refId": "B", "datasource": { "type": "loki", "uid": "loki" },
+          "expr": "sum(count_over_time({job=~\"$job\"} |= \"$search\" |~ \"(?i)(error|exception|fail)\" [1m]))",
+          "legendFormat": "errors/min" }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "logs",
+      "title": "로그 스트림",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "gridPos": { "h": 18, "w": 24, "x": 0, "y": 8 },
+      "options": {
+        "showTime": true, "showLabels": false, "showCommonLabels": false,
+        "wrapLogMessage": true, "prettifyLogMessage": false,
+        "enableLogDetails": true, "dedupStrategy": "none", "sortOrder": "Descending"
+      },
+      "targets": [
+        { "refId": "A", "datasource": { "type": "loki", "uid": "loki" },
+          "expr": "{job=~\"$job\"} |= \"$search\"" }
+      ]
+    }
+  ]
+}
