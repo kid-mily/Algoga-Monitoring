@@ -24,7 +24,7 @@ services:
         # prometheus.yml : 나열한 변수만 치환
         envsubst '$$PROM_TARGET $$PROM_PORT $$PROM_PATH $$SCRAPE_INTERVAL' \
           < /tpl/prometheus.yml.tpl > /rendered/prometheus.yml
-        # nginx.conf : 업스트림만 치환 (nginx 내장 $host 등은 그대로 보존)
+        # nginx.conf : 업스트림만 치환 
         envsubst '$$GRAFANA_UPSTREAM $$PROMETHEUS_UPSTREAM' \
           < /tpl/nginx.conf.tpl > /rendered/nginx.conf
         echo "[config-renderer] rendered prometheus.yml & nginx.conf"
