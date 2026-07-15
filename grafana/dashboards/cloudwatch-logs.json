@@ -1,0 +1,82 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "graphTooltip": 0,
+  "links": [],
+  "liveNow": true,
+  "schemaVersion": 39,
+  "tags": ["logs", "cloudwatch", "algoga"],
+  "templating": {
+    "list": [
+      {
+        "name": "log_group",
+        "label": "로그 그룹",
+        "type": "custom",
+        "query": "/ecs/team02-01-backend-task,/ecs/team02-01-frontend-task",
+        "includeAll": false,
+        "multi": false,
+        "current": { "text": "/ecs/team02-01-backend-task", "value": "/ecs/team02-01-backend-task" },
+        "options": [
+          { "text": "/ecs/team02-01-backend-task", "value": "/ecs/team02-01-backend-task", "selected": true },
+          { "text": "/ecs/team02-01-frontend-task", "value": "/ecs/team02-01-frontend-task", "selected": false }
+        ]
+      }
+    ]
+  },
+  "time": { "from": "now-15m", "to": "now" },
+  "refresh": "10s",
+  "timezone": "",
+  "title": "서버 로그 (CloudWatch)",
+  "uid": "algoga-cloudwatch-logs",
+  "version": 1,
+  "panels": [
+    {
+      "id": 1,
+      "type": "logs",
+      "title": "로그 스트림 · $log_group",
+      "datasource": { "type": "cloudwatch", "uid": "cloudwatch_ds" },
+      "gridPos": { "h": 16, "w": 24, "x": 0, "y": 0 },
+      "options": {
+        "showTime": true,
+        "showLabels": false,
+        "wrapLogMessage": true,
+        "prettifyLogMessage": false,
+        "enableLogDetails": true,
+        "dedupStrategy": "none",
+        "sortOrder": "Descending"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "cloudwatch", "uid": "cloudwatch_ds" },
+          "queryMode": "Logs",
+          "region": "default",
+          "logGroupNames": ["$log_group"],
+          "expression": "fields @timestamp, @message | sort @timestamp desc | limit 500"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "로그 발생량 (분당)",
+      "datasource": { "type": "cloudwatch", "uid": "cloudwatch_ds" },
+      "gridPos": { "h": 7, "w": 24, "x": 0, "y": 16 },
+      "fieldConfig": { "defaults": {
+        "color": { "mode": "palette-classic" },
+        "custom": { "drawStyle": "bars", "fillOpacity": 40, "lineWidth": 1 }, "unit": "short" }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "single" } },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "cloudwatch", "uid": "cloudwatch_ds" },
+          "queryMode": "Logs",
+          "region": "default",
+          "logGroupNames": ["$log_group"],
+          "expression": "stats count(*) as count by bin(1m)",
+          "statsGroups": []
+        }
+      ]
+    }
+  ]
+}

@@ -25,5 +25,5 @@ datasources:
     type: cloudwatch
     jsonData:
       authType: default
-      defaultRegion: ap-northeast-2
+      defaultRegion: ${AWS_REGION}   # grafana 컨테이너 env(AWS_REGION)를 Grafana가 치환
     editable: true
