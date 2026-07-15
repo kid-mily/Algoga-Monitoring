@@ -17,3 +17,13 @@ datasources:
     access: proxy
     url: http://loki:3100
     editable: true
+
+  # CloudWatch Logs — ECS가 기본으로 남기는 로그를 Grafana에서 바로 조회/실시간 tail.
+  # 인증은 모니터링 EC2의 IAM 역할 사용(authType: default). → EC2 역할에 CloudWatchReadOnlyAccess 필요.
+  - name: CloudWatch
+    uid: cloudwatch_ds
+    type: cloudwatch
+    jsonData:
+      authType: default
+      defaultRegion: ap-northeast-2
+    editable: true
