@@ -1,7 +1,6 @@
 {
   "annotations": { "list": [] },
   "editable": true,
-  "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
   "links": [],
   "liveNow": true,
@@ -32,11 +31,11 @@
     ]
   },
   "time": { "from": "now-1h", "to": "now" },
-  "timepicker": {},
+  "refresh": "10s",
   "timezone": "",
   "title": "서버 로그 (Loki)",
   "uid": "algoga-server-logs",
-  "version": 1,
+  "version": 2,
   "weekStart": "",
   "panels": [
     {
@@ -44,7 +43,7 @@
       "type": "stat",
       "title": "총 로그 라인 (선택 기간)",
       "datasource": { "type": "loki", "uid": "loki_ds" },
-      "gridPos": { "h": 8, "w": 6, "x": 0, "y": 0 },
+      "gridPos": { "h": 6, "w": 6, "x": 0, "y": 0 },
       "options": {
         "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
         "colorMode": "value", "graphMode": "area", "justifyMode": "auto", "textMode": "auto"
@@ -62,7 +61,7 @@
       "type": "stat",
       "title": "에러/예외 로그 (선택 기간)",
       "datasource": { "type": "loki", "uid": "loki_ds" },
-      "gridPos": { "h": 8, "w": 6, "x": 6, "y": 0 },
+      "gridPos": { "h": 6, "w": 6, "x": 6, "y": 0 },
       "options": {
         "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
         "colorMode": "value", "graphMode": "area", "justifyMode": "auto", "textMode": "auto"
@@ -80,7 +79,7 @@
       "type": "timeseries",
       "title": "로그 발생량 (분당)",
       "datasource": { "type": "loki", "uid": "loki_ds" },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "gridPos": { "h": 6, "w": 12, "x": 12, "y": 0 },
       "fieldConfig": { "defaults": {
         "color": { "mode": "palette-classic" },
         "custom": { "drawStyle": "bars", "fillOpacity": 40, "lineWidth": 1, "stacking": { "mode": "normal", "group": "A" } },
@@ -100,7 +99,7 @@
       "type": "logs",
       "title": "로그 스트림",
       "datasource": { "type": "loki", "uid": "loki_ds" },
-      "gridPos": { "h": 18, "w": 24, "x": 0, "y": 8 },
+      "gridPos": { "h": 18, "w": 24, "x": 0, "y": 6 },
       "options": {
         "showTime": true, "showLabels": false, "showCommonLabels": false,
         "wrapLogMessage": true, "prettifyLogMessage": false,
@@ -108,7 +107,7 @@
       },
       "targets": [
         { "refId": "A", "datasource": { "type": "loki", "uid": "loki_ds" },
-          "expr": "{job=~\"$job\"} |= \"$search\"" }
+          "expr": "{job=~\"$job\"} | json | line_format \"{{.log}}\" |= \"$search\"" }
       ]
     }
   ]
