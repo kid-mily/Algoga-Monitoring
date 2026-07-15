@@ -16,3 +16,18 @@ scrape_configs:
   # (선택) Cloud Map 없이 정적 주소/내부 ALB로 긁고 싶으면 위 dns_sd 대신 아래 사용:
   # static_configs:
   #   - targets: ['${PROM_TARGET}:${PROM_PORT}']
+
+  # 프론트엔드(Next.js) 가용성 HTTP 프로브 — Blackbox 경유. probe_success=1 이면 정상.
+  - job_name: 'frontend-probe'
+    metrics_path: /probe
+    params:
+      module: [http_2xx]
+    static_configs:
+      - targets: ['${FRONT_URL}']
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox:9115

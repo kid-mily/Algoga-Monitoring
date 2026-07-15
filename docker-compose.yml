@@ -10,6 +10,7 @@ services:
       PROM_PORT: ${PROM_PORT}
       PROM_PATH: ${PROM_PATH}
       SCRAPE_INTERVAL: ${SCRAPE_INTERVAL}
+      FRONT_URL: ${FRONT_URL}
       GRAFANA_UPSTREAM: ${GRAFANA_UPSTREAM}
       PROMETHEUS_UPSTREAM: ${PROMETHEUS_UPSTREAM}
     volumes:
@@ -22,7 +23,7 @@ services:
       - |
         apk add --no-cache gettext >/dev/null
         # prometheus.yml : 나열한 변수만 치환
-        envsubst '$$PROM_TARGET $$PROM_PORT $$PROM_PATH $$SCRAPE_INTERVAL' \
+        envsubst '$$PROM_TARGET $$PROM_PORT $$PROM_PATH $$SCRAPE_INTERVAL $$FRONT_URL' \
           < /tpl/prometheus.yml.tpl > /rendered/prometheus.yml
         # nginx.conf : 업스트림만 치환 (nginx 내장 변수는 그대로 보존)
         envsubst '$$GRAFANA_UPSTREAM $$PROMETHEUS_UPSTREAM' \
@@ -86,13 +87,22 @@ services:
       - prometheus-data:/prometheus
     restart: unless-stopped
 
-  # 4) Loki : UI 없음(Grafana에서 조회). 앱이 여기로 로그 push
+  # 4) Loki : UI 없음(Grafana에서 조회). ECS 앱(FireLens)이 여기로 로그 push
   loki:
     image: grafana/loki:latest
     command: -config.file=/etc/loki/local-config.yaml
+    # ECS 태스크가 EC2 사설IP:3100 으로 push 할 수 있도록 호스트 포트 노출.
+    # ⚠️ 반드시 SG로 3100 인바운드를 "앱 태스크 SG" 에서만 허용할 것 (인터넷 공개 금지)
+    ports:
+      - "3100:3100"
     volumes:
       - ./loki/loki-config.yml:/etc/loki/local-config.yaml:ro
       - loki-data:/loki
+    restart: unless-stopped
+
+  # 5) Blackbox : 프론트엔드 등 외부 URL을 HTTP 프로브(가용성 확인). Prometheus가 이를 스크레이프.
+  blackbox:
+    image: prom/blackbox-exporter:latest
     restart: unless-stopped
 
 volumes:
