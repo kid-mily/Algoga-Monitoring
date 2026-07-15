@@ -61,10 +61,6 @@ services:
       - GF_SERVER_SERVE_FROM_SUB_PATH=true
       - GF_SECURITY_ADMIN_PASSWORD=${GF_ADMIN_PW}
       - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
-      # CloudWatch 데이터소스: 리전 + 키 (provisioning의 ${...} 치환에 사용)
-      - AWS_REGION=${AWS_REGION:-ap-northeast-2}
-      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
       - SLACK_WEBHOOK_URL=${SLACK_WEBHOOK_URL:-https://hooks.slack.com/services/PLACEHOLDER/PLACEHOLDER/PLACEHOLDER}
     volumes:
       - ./grafana/provisioning:/etc/grafana/provisioning

@@ -17,17 +17,3 @@ datasources:
     access: proxy
     url: http://loki:3100
     editable: true
-
-  # CloudWatch Logs — ECS가 기본으로 남기는 로그를 Grafana에서 바로 조회.
-  # 키 방식(authType: keys): .env 의 AWS 키/리전만 있으면 됨 (콘솔 IAM 역할/hop limit 불필요).
-  # 값은 grafana 컨테이너 env 를 Grafana provisioning 이 치환한다.
-  - name: CloudWatch
-    uid: cloudwatch_ds
-    type: cloudwatch
-    jsonData:
-      authType: keys
-      defaultRegion: ${AWS_REGION}
-    secureJsonData:
-      accessKey: ${AWS_ACCESS_KEY_ID}
-      secretKey: ${AWS_SECRET_ACCESS_KEY}
-    editable: true
