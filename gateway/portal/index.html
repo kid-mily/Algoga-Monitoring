@@ -104,26 +104,21 @@
     requestAnimationFrame(rain); }
   rain();
 
-  /* 부팅 로그 */
+  /* 부팅 로그: 짧고 빠르게 (장식용 — 카드 노출을 막지 않음) */
   const boot=document.getElementById('boot');
   const lines=[
-    "> initializing ops console ...",
-    "> establishing secure channel [AES-256] ... <span class='ok'>OK</span>",
-    "> resolving nodes via cloud map ... <span class='ok'>OK</span>",
-    "> querying prometheus for service health ...",
+    "> ops console online ...",
     "> <span class='ok'>ACCESS GRANTED.</span> <span class='dim'>welcome, operator.</span>"
   ];
   let li=0,ci=0,acc="";
   function type(){
-    if(li>=lines.length){ boot.innerHTML=acc+'<span class="cursor"></span>';
-      document.getElementById('grid').classList.add('show');
-      document.getElementById('statusbar').classList.add('show'); refresh(); return; }
+    if(li>=lines.length){ boot.innerHTML=acc+'<span class="cursor"></span>'; return; }
     const raw=lines[li]; ci++; let shown=raw.slice(0,ci);
     const lt=shown.lastIndexOf('<'),gt=shown.lastIndexOf('>');
     if(lt>gt){ const close=raw.indexOf('>',lt); if(close>-1){ ci=close+1; shown=raw.slice(0,ci);} }
     boot.innerHTML=acc+shown+'<span class="cursor"></span>';
-    if(ci>=raw.length){ acc+=raw+"\n"; li++; ci=0; setTimeout(type,220); }
-    else setTimeout(type,16+Math.random()*22);
+    if(ci>=raw.length){ acc+=raw+"\n"; li++; ci=0; setTimeout(type,60); }
+    else setTimeout(type,7);
   }
   type();
 
@@ -154,6 +149,10 @@
     await Promise.all(nodes.map(n=> n.dataset.health ? checkHealth(n) : checkProm(n)));
     sysStatus();
   }
+  /* 카드/상태 즉시 노출 + 폴링 시작 (부팅 애니메이션과 무관하게 바로) */
+  document.getElementById('grid').classList.add('show');
+  document.getElementById('statusbar').classList.add('show');
+  refresh();
   setInterval(refresh,15000);
 </script>
 </body>
