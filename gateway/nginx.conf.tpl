@@ -31,6 +31,17 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
     }
 
+    # 백엔드(Spring Boot) 헬스체크 — 포털 BACKEND 카드 전용.
+    # ECS 태스크 IP 변동 대응: 변수+resolver 로 요청 시점에 DNS 재해석 (Docker 내장 DNS 127.0.0.11).
+    location = /healthz/backend {
+        resolver 127.0.0.11 valid=10s;
+        set $backend_health "${PROM_TARGET}:${PROM_PORT}";
+        proxy_pass http://$backend_health/actuator/health;
+        proxy_set_header Host $host;
+        proxy_connect_timeout 3s;
+        proxy_read_timeout 3s;
+    }
+
     # ── 새 도구 추가 시 여기에 location 한 블록 + portal/index.html 카드 한 줄 ──
     # location /pgadmin/ { proxy_pass http://pgadmin:80/; ... }
 }
